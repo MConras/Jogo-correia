@@ -672,3 +672,5 @@ sacar
 lavar
 nisso
 bingo
+podre
+porte
