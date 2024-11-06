@@ -17,11 +17,13 @@ let tentativasRestantes = 6;
 let tentativaAtual = ['', '', '', '', ''];
 let posicaoAtual = 0; // Posição do cursor
 let linhaAtual = 0; // Índice da linha atual
+let usingDeviceKeyboard = false; // Indica se o teclado do dispositivo está ativo
 
 function iniciarJogo() {
     palavraDoDia = palavras[Math.floor(Math.random() * palavras.length)];
     initBoard();
-    initHiddenInput();
+    initKeyboard();
+    initToggleKeyboardButton();
 }
 
 function initBoard() {
@@ -48,45 +50,129 @@ function initBoard() {
     selecionarCaixa(linhaAtual, posicaoAtual);
 }
 
-function initHiddenInput() {
-    const hiddenInput = document.getElementById('hidden-input');
+function initKeyboard() {
+    const keyboard = document.getElementById('keyboard');
+    keyboard.innerHTML = '';
 
-    // Quando a página é tocada, focar no input oculto para abrir o teclado
-    document.addEventListener('touchstart', () => {
-        hiddenInput.focus();
-    });
+    const teclas = [
+        ['Q','W','E','R','T','Y','U','I','O','P'],
+        ['A','S','D','F','G','H','J','K','L','Ç'],
+        ['Enter','Z','X','C','V','B','N','M','Backspace']
+    ];
 
-    // Quando a página é clicada (para desktops)
-    document.addEventListener('mousedown', () => {
-        hiddenInput.focus();
-    });
+    teclas.forEach((linha) => {
+        let linhaDiv = document.createElement('div');
+        linhaDiv.classList.add('linha-teclas');
 
-    // Capturar eventos de teclado do input oculto
-    hiddenInput.addEventListener('keydown', (e) => {
-        if (tentativasRestantes === 0) {
-            return;
-        }
+        linha.forEach((tecla) => {
+            let botaoTecla = document.createElement('button');
+            botaoTecla.textContent = tecla;
+            botaoTecla.classList.add('key');
+            botaoTecla.setAttribute('data-key', tecla);
 
-        let pressedKey = String(e.key).toUpperCase();
+            if (tecla === 'Enter' || tecla === 'Backspace') {
+                botaoTecla.classList.add('wide');
+            }
 
-        if (pressedKey === "BACKSPACE") {
-            e.preventDefault();
-            deletarLetra();
-            return;
-        }
+            botaoTecla.addEventListener('click', handleMouseClick);
+            linhaDiv.appendChild(botaoTecla);
+        });
 
-        if (pressedKey === "ENTER") {
-            e.preventDefault();
-            checarTentativa();
-            return;
-        }
-
-        if (/^[A-ZÇ]$/.test(pressedKey)) {
-            e.preventDefault();
-            inserirLetra(pressedKey);
-        }
+        keyboard.appendChild(linhaDiv);
     });
 }
+
+function initToggleKeyboardButton() {
+    const toggleButton = document.getElementById('toggle-keyboard-button');
+    toggleButton.addEventListener('click', toggleKeyboard);
+}
+
+function toggleKeyboard() {
+    usingDeviceKeyboard = !usingDeviceKeyboard;
+    const keyboard = document.getElementById('keyboard');
+    const hiddenInput = document.getElementById('hidden-input');
+    const toggleButton = document.getElementById('toggle-keyboard-button');
+
+    if (usingDeviceKeyboard) {
+        keyboard.style.display = 'none';
+        hiddenInput.focus();
+        toggleButton.textContent = 'Usar Teclado Virtual';
+    } else {
+        keyboard.style.display = 'block';
+        hiddenInput.blur();
+        toggleButton.textContent = 'Usar Teclado do Dispositivo';
+    }
+}
+
+function handleMouseClick(e) {
+    const tecla = e.target.getAttribute('data-key');
+
+    if (tecla === 'Backspace') {
+        deletarLetra();
+        return;
+    }
+
+    if (tecla === 'Enter') {
+        checarTentativa();
+        return;
+    }
+
+    inserirLetra(tecla);
+}
+
+document.addEventListener("keydown", (e) => {
+    if (tentativasRestantes === 0) {
+        return;
+    }
+
+    let pressedKey = String(e.key).toUpperCase();
+
+    if (pressedKey === "BACKSPACE") {
+        e.preventDefault();
+        deletarLetra();
+        return;
+    }
+
+    if (pressedKey === "ENTER") {
+        e.preventDefault();
+        checarTentativa();
+        return;
+    }
+
+    if (/^[A-ZÇ]$/.test(pressedKey)) {
+        e.preventDefault();
+        inserirLetra(pressedKey);
+    }
+});
+
+// Evento para o campo de entrada oculto
+const hiddenInput = document.getElementById('hidden-input');
+hiddenInput.addEventListener('keydown', (e) => {
+    if (!usingDeviceKeyboard) return; // Ignora se o teclado do dispositivo não estiver ativo
+
+    if (tentativasRestantes === 0) {
+        return;
+    }
+
+    let pressedKey = String(e.key).toUpperCase();
+
+    if (pressedKey === "BACKSPACE") {
+        e.preventDefault();
+        deletarLetra();
+        return;
+    }
+
+    if (pressedKey === "ENTER") {
+        e.preventDefault();
+        checarTentativa();
+        return;
+    }
+
+    if (/^[A-ZÇ]$/.test(pressedKey)) {
+        e.preventDefault();
+        inserirLetra(pressedKey);
+    }
+});
 
 function inserirLetra(letra) {
     if (posicaoAtual >= 5) {
@@ -124,8 +210,10 @@ function selecionarCaixa(linha, coluna) {
     box.classList.add('selected');
     posicaoAtual = coluna;
 
-    // Focar no input oculto para garantir que o teclado esteja ativo
-    document.getElementById('hidden-input').focus();
+    // Se o teclado do dispositivo estiver ativo, focar no input oculto
+    if (usingDeviceKeyboard) {
+        hiddenInput.focus();
+    }
 }
 
 function moverCursor(direcao) {
@@ -146,8 +234,10 @@ function moverCursor(direcao) {
         box.classList.add('selected');
     }
 
-    // Focar no input oculto para garantir que o teclado esteja ativo
-    document.getElementById('hidden-input').focus();
+    // Se o teclado do dispositivo estiver ativo, focar no input oculto
+    if (usingDeviceKeyboard) {
+        hiddenInput.focus();
+    }
 }
 
 function normalizarPalavra(palavra) {
