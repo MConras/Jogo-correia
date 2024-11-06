@@ -17,11 +17,13 @@ let tentativasRestantes = 6;
 let tentativaAtual = ['', '', '', '', ''];
 let posicaoAtual = 0; // Posição do cursor
 let linhaAtual = 0; // Índice da linha atual
+let usingDeviceKeyboard = false; // Indica se o teclado do dispositivo está ativo
 
 function iniciarJogo() {
     palavraDoDia = palavras[Math.floor(Math.random() * palavras.length)];
     initBoard();
     initKeyboard();
+    initToggleKeyboardButton();
 }
 
 function initBoard() {
@@ -48,15 +50,15 @@ function initBoard() {
     selecionarCaixa(linhaAtual, posicaoAtual);
 }
 
-const teclas = [
-    ['Q','W','E','R','T','Y','U','I','O','P'],
-    ['A','S','D','F','G','H','J','K','L','Ç'],
-    ['Enter','Z','X','C','V','B','N','M','Backspace']
-];
-
 function initKeyboard() {
     const keyboard = document.getElementById('keyboard');
     keyboard.innerHTML = '';
+
+    const teclas = [
+        ['Q','W','E','R','T','Y','U','I','O','P'],
+        ['A','S','D','F','G','H','J','K','L','Ç'],
+        ['Enter','Z','X','C','V','B','N','M','Backspace']
+    ];
 
     teclas.forEach((linha) => {
         let linhaDiv = document.createElement('div');
@@ -80,6 +82,31 @@ function initKeyboard() {
     });
 }
 
+function initToggleKeyboardButton() {
+    const toggleButton = document.getElementById('toggle-keyboard-button');
+    toggleButton.addEventListener('click', toggleKeyboard);
+}
+
+function toggleKeyboard() {
+    usingDeviceKeyboard = !usingDeviceKeyboard;
+    const keyboard = document.getElementById('keyboard');
+    const inputContainer = document.getElementById('input-container');
+    const inputField = document.getElementById('device-keyboard-input');
+    const toggleButton = document.getElementById('toggle-keyboard-button');
+
+    if (usingDeviceKeyboard) {
+        keyboard.style.display = 'none';
+        inputContainer.style.display = 'block';
+        inputField.focus();
+        toggleButton.textContent = 'Usar Teclado Virtual';
+    } else {
+        keyboard.style.display = 'block';
+        inputContainer.style.display = 'none';
+        inputField.blur();
+        toggleButton.textContent = 'Usar Teclado do Dispositivo';
+    }
+}
+
 function handleMouseClick(e) {
     const tecla = e.target.getAttribute('data-key');
 
@@ -97,6 +124,8 @@ function handleMouseClick(e) {
 }
 
 document.addEventListener("keydown", (e) => {
+    if (usingDeviceKeyboard) return; // Ignora se o teclado do dispositivo estiver ativo
+
     if (tentativasRestantes === 0) {
         return;
     }
@@ -113,6 +142,35 @@ document.addEventListener("keydown", (e) => {
     }
 
     if (/^[A-ZÇ]$/.test(pressedKey)) {
+        inserirLetra(pressedKey);
+    }
+});
+
+// Evento para o campo de entrada do teclado do dispositivo
+const inputField = document.getElementById('device-keyboard-input');
+inputField.addEventListener('keydown', (e) => {
+    if (!usingDeviceKeyboard) return; // Ignora se o teclado do dispositivo não estiver ativo
+
+    if (tentativasRestantes === 0) {
+        return;
+    }
+
+    let pressedKey = String(e.key).toUpperCase();
+
+    if (pressedKey === "BACKSPACE") {
+        e.preventDefault();
+        deletarLetra();
+        return;
+    }
+
+    if (pressedKey === "ENTER") {
+        e.preventDefault();
+        checarTentativa();
+        return;
+    }
+
+    if (/^[A-ZÇ]$/.test(pressedKey)) {
+        e.preventDefault();
         inserirLetra(pressedKey);
     }
 });
@@ -238,7 +296,20 @@ function checarTentativa() {
 
     // Verificar se o jogador venceu
     if (tentativaNormalizada === palavraDoDiaNormalizada) {
-        alert("Parabéns! Você acertou!");
+        // Colorir a palavra inteira de verde antes do aviso de vitória
+        setTimeout(() => {
+            for (let i = 0; i < 5; i++) {
+                let box = row.children[i];
+                box.classList.remove('present', 'absent');
+                box.classList.add('correct');
+            }
+        }, 100);
+
+        // Exibir o aviso de vitória após uma pequena pausa
+        setTimeout(() => {
+            alert("Parabéns! Você acertou!");
+        }, 600);
+
         tentativasRestantes = 0;
         return;
     } else {
