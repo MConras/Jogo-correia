@@ -1,11 +1,24 @@
+/**
+ * Este projeto utiliza uma lista de palavras licenciada sob a MIT License.
+ * 
+ * Copyright 2021 Fernando Serboncini
+ * 
+ * Licenciado sob a MIT License. Veja o arquivo LICENSE para mais informações.
+ */
+
+
 let palavras = [];
+let palavrasCincoLetras = [];
 
 fetch('palavras.txt')
     .then(response => response.text())
     .then(data => {
-        palavras = data.split('\n').map(palavra => palavra.trim());
-        palavras = palavras.filter(palavra => palavra.length === 5);
-        palavras = palavras.map(palavra => palavra.toUpperCase());
+        palavras = data
+        .split('\n')
+        .map(palavra => palavra.trim())
+        .filter(palavra => !palavra.startsWith('#') && palavra.length > 0)
+        .map(palavra => palavra.toUpperCase());    
+        palavrasCincoLetras = palavras.filter(palavra => palavra.length === 5);
         iniciarJogo();
     })
     .catch(error => {
@@ -20,7 +33,11 @@ let linhaAtual = 0; // Índice da linha atual
 let usingDeviceKeyboard = false; // Indica se o teclado do dispositivo está ativo
 
 function iniciarJogo() {
-    palavraDoDia = palavras[Math.floor(Math.random() * palavras.length)];
+    if (palavrasCincoLetras.length === 0) {
+        alert("Nenhuma palavra de 5 letras encontrada na lista.");
+        return;
+    }
+    palavraDoDia = palavrasCincoLetras[Math.floor(Math.random() * palavrasCincoLetras.length)];
     initBoard();
     initKeyboard();
     initToggleKeyboardButton();
